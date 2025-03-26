@@ -1,8 +1,11 @@
-declare module '@env' {
-    export const EXPO_OS: string;
-    export const EXPO_ROUTER_APP_ROOT: string;
-    export const EXPO_ROUTER_IMPORT_MODE: string;
-    export const APPWRITE_ENDPOINT: string;
-    export const APPWRITE_PROJECT_ID: string;
-    export const APPWRITE_PLATFORM: string;
+/// <reference types="node" />
+
+declare namespace NodeJS {
+    interface ProcessEnv {
+      EXPO_PUBLIC_APPWRITE_ENDPOINT: string;
+      EXPO_PUBLIC_APPWRITE_PROJECT_ID: string;
+      EXPO_PUBLIC_APPWRITE_PLATFORM: string;
+      EXPO_ROUTER_APP_ROOT: string;
+      EXPO_ROUTER_IMPORT_MODE: string;
+    }
   }
