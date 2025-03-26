@@ -1,13 +1,13 @@
 import { Client, Account, Databases, Storage } from 'react-native-appwrite';
-import Constants from 'expo-constants';
 
-const {
-  APPWRITE_ENDPOINT,
-  APPWRITE_PROJECT_ID,
-  APPWRITE_PLATFORM
-} = Constants.expoConfig?.extra || {};
+const APPWRITE_ENDPOINT = process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT;
+const APPWRITE_PROJECT_ID = process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID;
+const APPWRITE_PLATFORM = process.env.EXPO_PUBLIC_APPWRITE_PLATFORM;
 
-console.log(APPWRITE_ENDPOINT,APPWRITE_PROJECT_ID,APPWRITE_PLATFORM)
+console.log('Appwrite config environment variables:');
+console.log('- ENDPOINT available:', !!APPWRITE_ENDPOINT);
+console.log('- PROJECT_ID available:', !!APPWRITE_PROJECT_ID);
+console.log('- PLATFORM available:', !!APPWRITE_PLATFORM);
 
 const client = new Client()
   .setEndpoint(APPWRITE_ENDPOINT)

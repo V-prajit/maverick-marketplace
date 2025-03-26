@@ -1,7 +1,6 @@
 import 'dotenv/config';
 export default ({ config }) => {
   const isWeb = process.env.WEB === 'true';
-  
   return {
     ...config,
     expo: {
@@ -21,22 +20,10 @@ export default ({ config }) => {
           backgroundColor: "#ffffff",
         },
       },
-      extra: {
-        APPWRITE_ENDPOINT: process.env.APPWRITE_ENDPOINT,
-        APPWRITE_PROJECT_ID: process.env.APPWRITE_PROJECT_ID,
-        APPWRITE_PLATFORM: process.env.APPWRITE_PLATFORM,
-        EXPO_OS: isWeb ? 'web' : 'native',
-      },
       web: {
         bundler: "metro",
         output: "static",
         favicon: "./assets/images/favicon.png",
-        environment: {
-          EXPO_OS: 'web',
-          APPWRITE_ENDPOINT: process.env.APPWRITE_ENDPOINT,
-          APPWRITE_PROJECT_ID: process.env.APPWRITE_PROJECT_ID,
-          APPWRITE_PLATFORM: process.env.APPWRITE_PLATFORM,
-        }
       },
       plugins: [
         "expo-router",
@@ -53,6 +40,8 @@ export default ({ config }) => {
       experiments: {
         typedRoutes: true,
       },
+      // Explicitly set new architecture to true 
+      newArchEnabled: true,
     },
   };
 };
