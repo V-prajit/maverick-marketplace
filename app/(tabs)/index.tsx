@@ -6,8 +6,16 @@ import { Query, Models } from 'react-native-appwrite';
 import { databases, storage, account, DATABASE_ID, LISTINGS_COLLECTION_ID, IMAGES_COLLECTION_ID, IMAGES_BUCKET_ID } from '../../appwrite/config';
 import ListingGrid from '../components/ListingGrid';
 
+interface Listing {
+  $id: string;
+  title: string;
+  price: number;
+  category: string;
+  imageUrl?: string;
+}
+
 export default function HomeScreen() {
-  const [listing, setListing] = useState<any[]>([]);
+  const [listing, setListing] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState<Models.User<Models.Preferences> | null>(null);

@@ -27,7 +27,7 @@ export default function ListingGrid({ listing, isLoading }){
       </TouchableOpacity>
     );
     
-    if (listings.length === 0 && !isLoading) {
+    if (listing.length === 0 && !isLoading) {
       return (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No listings found</Text>
@@ -37,7 +37,7 @@ export default function ListingGrid({ listing, isLoading }){
     
     return (
       <FlatList
-        data={listings}
+        data={listing}
         renderItem={renderListingItem}
         keyExtractor={item => item.$id}
         numColumns={2}

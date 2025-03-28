@@ -84,7 +84,7 @@ export default function ListingForm({ navigation }){
         try{
             const currentUser = await account.get();
 
-            const listingID = ID.unique();
+            const listingId = ID.unique();
 
             await databases.createDocument(
                 DATABASE_ID,
