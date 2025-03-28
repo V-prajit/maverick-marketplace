@@ -12,3 +12,4 @@ expo-env.d.ts
 
 # Do not ignore the appwrite/.env.example if created
 !/appwrite/.env.example
+/appwrite-setup/node_modules

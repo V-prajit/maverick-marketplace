@@ -1,167 +1,248 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native';
-import { ID, Models } from 'react-native-appwrite';
 import React, { useState, useEffect } from 'react';
-import { router } from 'expo-router';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TextInput, 
+  TouchableOpacity, 
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { ID } from 'react-native-appwrite';
 import { account } from '../appwrite/config';
 
-export default function Index() {
-  const [loggedInUser, setLoggedInUser] = useState<Models.User<Models.Preferences> | null>(null);
+export default function LoginScreen() {
+  const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const router = useRouter();
 
-  // Check if user is already logged in
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        // First check if there's an active session
-        try {
-          const session = await account.getSession('current');
-          if (session) {
-            const user = await account.get();
-            setLoggedInUser(user);
-          }
-        } catch (sessionError) {
-          // No active session, this is expected for new users
-          console.log('No active session found');
-        }
-      } catch (error) {
-        console.error('Session error:', error);
-      }
-    };
-    
     checkSession();
   }, []);
 
-  async function login(email: string, password: string) {
+  const checkSession = async () => {
+    setIsCheckingSession(true);
     try {
-      await account.createEmailPasswordSession(email, password);
-      setLoggedInUser(await account.get());
+      const session = await account.getSession('current');
+      if (session) {
+        router.replace('/(tabs)');
+      }
     } catch (error) {
-      console.error('Login error:', error);
+      console.log('No active session');
+    } finally {
+      setIsCheckingSession(false);
     }
-  }
+  };
 
-  async function register(email: string, password: string, name: string) {
-    try {
-      await account.create(ID.unique(), email, password, name);
-      await login(email, password);
-    } catch (error) {
-      console.error('Registration error:', error);
+  const validateForm = () => {
+    if (!email.trim()) {
+      Alert.alert('Error', 'Email is required');
+      return false;
     }
+    
+    if (!password.trim()) {
+      Alert.alert('Error', 'Password is required');
+      return false;
+    }
+    
+    if (mode === 'register' && !name.trim()) {
+      Alert.alert('Error', 'Name is required');
+      return false;
+    }
+    
+    return true;
+  };
+
+  const handleAuth = async () => {
+    if (!validateForm()) return;
+    
+    setIsLoading(true);
+    
+    try {
+      if (mode === 'login') {
+        // Log in the user
+        await account.createEmailPasswordSession(email, password);
+      } else {
+        // Register a new user
+        await account.create(ID.unique(), email, password, name);
+        
+        // Then log in the user
+        await account.createEmailPasswordSession(email, password);
+      }
+      
+      // Navigate to the main app
+      router.replace('/(tabs)');
+    } catch (error) {
+      console.error('Authentication error:', error);
+      Alert.alert(
+        'Authentication Error', 
+        mode === 'login' 
+          ? 'Failed to log in. Please check your credentials.' 
+          : 'Failed to register. This email might already be in use.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isCheckingSession) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#2196F3" />
+      </View>
+    );
   }
 
   return (
-    <View style={styles.root}>
-      <Text style={styles.title}>Maverick Marketplace</Text>
-      <Text style={styles.subtitle}>
-        {loggedInUser ? `Logged in as ${loggedInUser.name}` : 'Not logged in'}
-      </Text>
-      <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={(text) => setEmail(text)}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={(text) => setPassword(text)}
-          secureTextEntry
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Name"
-          value={name}
-          onChangeText={(text) => setName(text)}
-        />
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => login(email, password)}
-        >
-          <Text style={styles.buttonText}>Login</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => register(email, password, name)}
-        >
-          <Text style={styles.buttonText}>Register</Text>
-        </TouchableOpacity>
-
-        {loggedInUser && (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Maverick Marketplace</Text>
+          <Text style={styles.subtitle}>UTA's own marketplace for students</Text>
+        </View>
+        
+        <View style={styles.form}>
+          {mode === 'register' && (
+            <>
+              <Text style={styles.label}>Name</Text>
+              <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                placeholder="Your full name"
+                autoCapitalize="words"
+              />
+            </>
+          )}
+          
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Your email address"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          
+          <Text style={styles.label}>Password</Text>
+          <TextInput
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Your password"
+            secureTextEntry
+          />
+          
           <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={async () => {
-              try {
-                await account.deleteSession('current');
-                setLoggedInUser(null);
-              } catch (error) {
-                console.error('Logout error:', error);
-              }
-            }}
+            style={[styles.button, isLoading && styles.buttonDisabled]}
+            onPress={handleAuth}
+            disabled={isLoading}
           >
-            <Text style={styles.buttonText}>Logout</Text>
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>
+                {mode === 'login' ? 'Log In' : 'Register'}
+              </Text>
+            )}
           </TouchableOpacity>
-        )}
-      </View>
-      <StatusBar style="auto" />
-    </View>
+          
+          <TouchableOpacity
+            style={styles.switchMode}
+            onPress={() => setMode(mode === 'login' ? 'register' : 'login')}
+          >
+            <Text style={styles.switchModeText}>
+              {mode === 'login' 
+                ? "Don't have an account? Register" 
+                : "Already have an account? Log In"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
+  container: {
     flex: 1,
     backgroundColor: '#fff',
-    alignItems: 'center',
+  },
+  centered: {
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scrollContent: {
+    flexGrow: 1,
     padding: 20,
+    justifyContent: 'center',
+  },
+  header: {
+    marginBottom: 40,
+    alignItems: 'center',
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 8,
+    color: '#2196F3',
   },
   subtitle: {
     fontSize: 16,
-    marginBottom: 20,
+    color: '#666',
+    textAlign: 'center',
   },
   form: {
     width: '100%',
-    maxWidth: 400,
+  },
+  label: {
+    fontSize: 16,
+    marginBottom: 5,
+    fontWeight: '500',
   },
   input: {
-    height: 40,
-    borderColor: 'gray',
+    height: 45,
+    borderColor: '#ddd',
     borderWidth: 1,
+    borderRadius: 5,
     marginBottom: 15,
     paddingHorizontal: 10,
-    borderRadius: 5,
-    width: '100%',
   },
   button: {
     backgroundColor: '#2196F3',
-    padding: 10,
-    marginBottom: 10,
-    alignItems: 'center',
+    height: 45,
     borderRadius: 5,
-  },
-  logoutButton: {
-    backgroundColor: '#f44336',
-    padding: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginTop: 10,
-    alignItems: 'center',
-    borderRadius: 5,
+  },
+  buttonDisabled: {
+    backgroundColor: '#A9A9A9',
   },
   buttonText: {
     color: 'white',
     fontWeight: 'bold',
+    fontSize: 16,
+  },
+  switchMode: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  switchModeText: {
+    color: '#2196F3',
+    fontSize: 16,
   },
 });

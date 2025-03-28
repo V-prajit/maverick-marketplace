@@ -9,4 +9,10 @@ const account = new Account(client);
 const databases = new Databases(client);
 const storage = new Storage(client);
 
+export const DATABASE_ID = '67e72aef00071555f538';
+export const USERS_COLLECTION_ID = 'users';
+export const LISTINGS_COLLECTION_ID = 'listings';
+export const IMAGES_COLLECTION_ID = 'images';
+export const IMAGES_BUCKET_ID = 'listing-images';
+
 export { client, account, databases, storage };
