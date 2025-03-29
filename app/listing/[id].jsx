@@ -168,19 +168,28 @@ export default function ListingDetailScreen() {
         style={styles.imageGallery}
       >
         {images.length > 0 ? (
-          images.map((image, index) => (
+        images.map((image, index) => (
             <Image 
-              key={index} 
-              source={{ uri: image.url }} 
-              style={styles.image} 
-              resizeMode="cover" 
+            key={`image-${image.fileId}-${index}`}
+            source={{ 
+                uri: image.url,
+                // Add authentication headers
+                headers: {
+                'X-Appwrite-Project': process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID,
+                },
+                // Force cache refresh
+                cache: 'reload'
+            }} 
+            style={styles.image} 
+            resizeMode="cover" 
             />
-          ))
+        ))
         ) : (
-          <View style={styles.placeholderImage}>
+        <View style={styles.placeholderImage}>
             <Text style={styles.placeholderText}>No Images Available</Text>
-          </View>
+        </View>
         )}
+
       </ScrollView>
 
       {/* Listing Details */}

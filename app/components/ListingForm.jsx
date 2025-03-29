@@ -12,6 +12,8 @@ import {
     IMAGES_COLLECTION_ID,
     IMAGES_BUCKET_ID 
 } from '../../appwrite/config';
+import * as FileSystem from 'expo-file-system';
+import { Platform } from 'react-native';
 
 export default function ListingForm({ navigation: externalNavigation }){
     const router = useRouter();
@@ -119,21 +121,41 @@ export default function ListingForm({ navigation: externalNavigation }){
             if (images.length > 0) {
                 await Promise.all(images.map(async (image, index) => {
                   try {
-                    // Get the file name and extension from the URI
+                    // Get the file name from the URI
                     const uriParts = image.uri.split('/');
                     const fileName = uriParts[uriParts.length - 1];
                     
                     console.log(`Uploading image: ${fileName}`);
                     
-                    // Try the most basic approach
-                    const fileUpload = await storage.createFile(
-                      IMAGES_BUCKET_ID,
-                      ID.unique(),
-                      image.uri,
-                      ['read("any")']
-                    );
+                    // Create a unique ID for the file
+                    const fileId = ID.unique();
                     
-                    console.log(`File uploaded successfully with ID: ${fileUpload.$id}`);
+                    // Prepare form data
+                    const formData = new FormData();
+                    formData.append('fileId', fileId);
+                    formData.append('file', {
+                      uri: image.uri,
+                      name: fileName,
+                      type: 'image/jpeg',
+                    });
+                    
+                    // Use fetch API to upload the file directly
+                    const endpoint = `${process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${IMAGES_BUCKET_ID}/files`;
+                    const response = await fetch(endpoint, {
+                      method: 'POST',
+                      headers: {
+                        'X-Appwrite-Project': process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID,
+                        // Add your API key or session token here for authentication
+                      },
+                      body: formData,
+                    });
+                    
+                    if (!response.ok) {
+                      throw new Error(`HTTP error ${response.status}`);
+                    }
+                    
+                    const fileData = await response.json();
+                    console.log(`File uploaded successfully with ID: ${fileData.$id}`);
                     
                     await databases.createDocument(
                       DATABASE_ID,
@@ -141,7 +163,7 @@ export default function ListingForm({ navigation: externalNavigation }){
                       ID.unique(),
                       {
                         listingId,
-                        fileId: fileUpload.$id,
+                        fileId: fileData.$id || fileId, // Use the response ID if available, fallback to our generated ID
                         order: index,
                       }
                     );

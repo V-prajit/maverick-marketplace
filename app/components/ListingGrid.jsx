@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, FlatList, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, RefreshControl } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 
 export default function ListingGrid({ listing, isLoading, refreshing, onRefresh }){
@@ -11,17 +12,23 @@ export default function ListingGrid({ listing, isLoading, refreshing, onRefresh 
         onPress={() => router.push(`/listing/${item.$id}`)}
       >
         <View style={styles.imageContainer}>
-          {item.imageUrl ? (
+        {item.imageUrl ? (
             <Image 
-              source={{ uri: item.imageUrl }} 
-              style={styles.image}
-              onError={(e) => console.error('Image load error:', e.nativeEvent.error)}
+                source={{ 
+                    uri: item.imageUrl,
+                    headers: {
+                    'X-Appwrite-Project': process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID,
+                    }
+                }}
+                style={styles.image}
+                contentFit="cover"
+                transition={300}
             />
-          ) : (
+        ) : (
             <View style={styles.placeholderImage}>
-              <Text style={styles.placeholderText}>No Image</Text>
+                <Text style={styles.placeholderText}>No Image</Text>
             </View>
-          )}
+        )}
         </View>
         <View style={styles.infoContainer}>
           <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
@@ -77,7 +84,6 @@ const styles = StyleSheet.create({
     image: {
       width: '100%',
       height: '100%',
-      resizeMode: 'cover',
     },
     placeholderImage: {
       width: '100%',

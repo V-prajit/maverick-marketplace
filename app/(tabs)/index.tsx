@@ -73,13 +73,11 @@ export default function HomeScreen() {
 
             if (imagesResponse.documents.length > 0) {
               const fileId = imagesResponse.documents[0].fileId;
-              const baseUrl = process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT
-              const imageUrl = `${baseUrl}/storage/buckets/${IMAGES_BUCKET_ID}/files/${fileId}/view`;
-              console.log("Generated image URL:", imageUrl);
-
               try {
+                const imageUrl = storage.getFileView(IMAGES_BUCKET_ID, fileId);
+                console.log("Generated image URL:", imageUrl);
+
                 listing.imageUrl = imageUrl;
-                console.log("Image URL:", listing.imageUrl); // Add logging for debugging
               } catch (error) {
                 console.error(`Error getting file view for ${fileId}:`, error);
               }
