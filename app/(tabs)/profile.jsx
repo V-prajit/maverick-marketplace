@@ -60,7 +60,7 @@ export default function ProfileScreen() {
       setUser(null);
       setProfile(null);
       setMyListings([]);
-      router.push('/');
+      router.push('/login');
     } catch (error) {
       console.error('Logout error:', error);
       Alert.alert('Error', 'Failed to log out');
@@ -84,9 +84,9 @@ export default function ProfileScreen() {
     return (
       <View style={styles.containerCenter}>
         <Text style={styles.message}>Please log in to view your profile</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.push('/')}>
-          <Text style={styles.buttonText}>Log In</Text>
-        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={() => router.push('/login')}>
+            <Text style={styles.buttonText}>Log In</Text>
+        </TouchableOpacity> 
       </View>
     );
   }

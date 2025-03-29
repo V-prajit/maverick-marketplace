@@ -82,9 +82,12 @@ export default function ListingForm({ navigation }){
         setIsSubmitting(true);
 
         try{
+            console.log("Starting submission process");
             const currentUser = await account.get();
+            console.log("Got current user:", currentUser.$id);
 
             const listingId = ID.unique();
+            console.log("Generated listing ID:", listingId);
 
             await databases.createDocument(
                 DATABASE_ID,
@@ -105,18 +108,21 @@ export default function ListingForm({ navigation }){
 
             if (images.length > 0) {
                 await Promise.all(images.map(async (image, index) => {
+                    console.log(`Processing image ${index}`);
                     const response = await fetch(image.uri);
                     const blob = await response.blob();
                     
                     const fileName = `${Date.now()}_${index}.jpg`;
-                    
+                    console.log(`Uploading file: ${fileName}`);
+
                     const fileUpload = await storage.createFile(
                       IMAGES_BUCKET_ID,
                       ID.unique(),
                       blob,
-                      fileName
+                      fileName,
                     );
-                    
+                    console.log(`File uploaded with ID: ${fileUpload.$id}`);
+
                     await databases.createDocument(
                       DATABASE_ID,
                       IMAGES_COLLECTION_ID,

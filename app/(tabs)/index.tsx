@@ -105,7 +105,7 @@ export default function HomeScreen() {
         {loggedInUser ? (
           <Text style={styles.welcomeText}>Welcome, {loggedInUser.name}</Text>
         ) : (
-          <TouchableOpacity onPress={() => router.push('/')}>
+          <TouchableOpacity onPress={() => router.push('/login')}>
             <Text style={styles.loginText}>Login</Text>
           </TouchableOpacity>
         )}

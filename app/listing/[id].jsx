@@ -80,7 +80,7 @@ export default function ListingDetailScreen() {
     if (!currentUser) {
       Alert.alert('Sign In Required', 'Please sign in to contact the seller', [
         { text: 'Cancel' },
-        { text: 'Sign In', onPress: () => router.push('/') }
+        { text: 'Sign In', onPress: () => router.push('/login') }
       ]);
       return;
     }
