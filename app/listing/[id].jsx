@@ -1,7 +1,10 @@
+// app/listing/[id].jsx
+
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Query } from 'react-native-appwrite';
+import { Image } from 'expo-image';
 import { account, databases, storage, DATABASE_ID, LISTINGS_COLLECTION_ID, IMAGES_COLLECTION_ID, USERS_COLLECTION_ID, IMAGES_BUCKET_ID } from '../../appwrite/config';
 
 export default function ListingDetailScreen() {
@@ -12,23 +15,26 @@ export default function ListingDetailScreen() {
   const [images, setImages] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchListingDetails();
-    checkCurrentUser();
+    // We'll attempt to fetch all data, but handle errors gracefully
+    fetchData();
   }, [id]);
 
   const checkCurrentUser = async () => {
     try {
       const user = await account.get();
       setCurrentUser(user);
+      return user;
     } catch (error) {
       console.log('No user logged in');
+      return null;
     }
   };
 
-  const fetchListingDetails = async () => {
-    setIsLoading(true);
+  // Separate functions to fetch each piece of data independently
+  const fetchListingData = async () => {
     try {
       const listingData = await databases.getDocument(
         DATABASE_ID,
@@ -36,42 +42,119 @@ export default function ListingDetailScreen() {
         id
       );
       setListing(listingData);
+      return listingData;
+    } catch (error) {
+      console.error('Error fetching listing data:', error);
+      setError('Could not load listing details. It may be private or no longer available.');
+      return null;
+    }
+  };
 
+  const fetchSellerData = async (userId) => {
+    if (!userId) return null;
+    
+    try {
+      const sellerResponse = await databases.listDocuments(
+        DATABASE_ID,
+        USERS_COLLECTION_ID,
+        [Query.equal('userId', userId)]
+      );
+
+      if (sellerResponse.documents.length > 0) {
+        const sellerData = sellerResponse.documents[0];
+        setSeller(sellerData);
+        return sellerData;
+      }
+      return null;
+    } catch (error) {
+      console.log('Could not fetch seller information:', error);
+      return null;
+    }
+  };
+
+  const fetchImagesData = async (listingId) => {
+    if (!listingId) return [];
+    
+    try {
       const imagesResponse = await databases.listDocuments(
         DATABASE_ID,
         IMAGES_COLLECTION_ID,
         [
-          Query.equal('listingId', id),
+          Query.equal('listingId', listingId),
           Query.orderAsc('order')
         ]
       );
 
-      const imageUrls = imagesResponse.documents.map(img => ({
-        id: img.$id,
-        fileId: img.fileId,
-        url: storage.getFileView(IMAGES_BUCKET_ID, img.fileId)
-      }));
-      setImages(imageUrls);
-
-      const sellerResponse = await databases.listDocuments(
-        DATABASE_ID,
-        USERS_COLLECTION_ID,
-        [Query.equal('userId', listingData.userId)]
-      );
-
-      if (sellerResponse.documents.length > 0) {
-        setSeller(sellerResponse.documents[0]);
+      if (imagesResponse.documents.length > 0) {
+        // Generate image URLs with direct view URLs for better guest access
+        const imageUrls = imagesResponse.documents.map((img, index) => {
+          try {
+            // Use getFileView instead of getFilePreview for better guest access
+            const viewUrl = storage.getFileView(IMAGES_BUCKET_ID, img.fileId).toString();
+            console.log(`Generated detail image URL: ${viewUrl}`);
+            return {
+              id: img.$id,
+              fileId: img.fileId,
+              url: viewUrl,
+              order: index
+            };
+          } catch (urlError) {
+            console.error(`Error generating URL for image ${img.fileId}:`, urlError);
+            return {
+              id: img.$id,
+              fileId: img.fileId,
+              url: null,
+              order: index
+            };
+          }
+        });
+        
+        setImages(imageUrls);
+        return imageUrls;
       }
+      
+      return [];
     } catch (error) {
-      console.error('Error fetching listing details:', error);
-      Alert.alert('Error', 'Could not load listing details');
-      router.back();
+      console.log('Could not fetch images:', error);
+      return [];
+    }
+  };
+
+  // Orchestrate all data fetching, but continue even if some parts fail
+  const fetchData = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // First check if user is logged in (don't need to wait for this)
+      checkCurrentUser();
+      
+      // Fetch the listing data first
+      const listingData = await fetchListingData();
+      
+      // If we can't get the listing data, we can't proceed
+      if (!listingData) {
+        setIsLoading(false);
+        return;
+      }
+      
+      // Now fetch seller and images in parallel
+      // We can still show the listing even if these fail
+      await Promise.all([
+        fetchSellerData(listingData.userId),
+        fetchImagesData(id)
+      ]);
+      
+    } catch (error) {
+      console.error('Unexpected error during data fetching:', error);
+      setError('An unexpected error occurred. Please try again later.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return '';
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
@@ -108,6 +191,11 @@ export default function ListingDetailScreen() {
   };
 
   const deleteListing = async () => {
+    if (!currentUser || !listing || currentUser.$id !== listing.userId) {
+      Alert.alert('Error', 'You do not have permission to delete this listing');
+      return;
+    }
+    
     Alert.alert(
       'Delete Listing',
       'Are you sure you want to delete this listing?',
@@ -145,10 +233,10 @@ export default function ListingDetailScreen() {
     );
   }
 
-  if (!listing) {
+  if (error || !listing) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Listing not found</Text>
+        <Text style={styles.errorText}>{error || 'Listing not found'}</Text>
         <TouchableOpacity style={styles.button} onPress={() => router.back()}>
           <Text style={styles.buttonText}>Go Back</Text>
         </TouchableOpacity>
@@ -167,29 +255,30 @@ export default function ListingDetailScreen() {
         showsHorizontalScrollIndicator={true}
         style={styles.imageGallery}
       >
-        {images.length > 0 ? (
-        images.map((image, index) => (
-            <Image 
-            key={`image-${image.fileId}-${index}`}
-            source={{ 
-                uri: image.url,
-                // Add authentication headers
-                headers: {
-                'X-Appwrite-Project': process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID,
-                },
-                // Force cache refresh
-                cache: 'reload'
-            }} 
-            style={styles.image} 
-            resizeMode="cover" 
-            />
-        ))
+        {images.length > 0 && images.some(img => img.url) ? (
+          images
+            .filter(image => image.url) // Only show images with valid URLs
+            .map((image, index) => (
+              <Image 
+                key={`image-${image.fileId}-${index}`}
+                source={{ 
+                  uri: image.url,
+                  headers: {
+                    'X-Appwrite-Project': process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID
+                  }
+                }}
+                style={styles.image} 
+                contentFit="cover"
+                cachePolicy="none"
+                onError={(error) => console.error(`Image loading error: ${error}`)}
+                onLoad={() => console.log(`Detail image loaded successfully: ${image.fileId}`)}
+              />
+            ))
         ) : (
-        <View style={styles.placeholderImage}>
+          <View style={styles.placeholderImage}>
             <Text style={styles.placeholderText}>No Images Available</Text>
-        </View>
+          </View>
         )}
-
       </ScrollView>
 
       {/* Listing Details */}
@@ -272,6 +361,8 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 18,
     marginBottom: 20,
+    textAlign: 'center',
+    color: '#f44336',
   },
   imageGallery: {
     height: 300,
