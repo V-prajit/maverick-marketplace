@@ -19,6 +19,24 @@ export default function TabLayout() {
       />
       
       <Tabs.Screen
+        name="chat"
+        options={{
+          title: 'Messages',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubbles" size={size} color={color} />
+          ),
+          headerShown: false,
+        }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            // Navigate to chat index
+            e.preventDefault();
+            navigation.navigate('/chat');
+          },
+        })}
+      />
+      
+      <Tabs.Screen
         name="create-listing"
         options={{
           title: 'Create',
