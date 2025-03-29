@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, TextInput, Text, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import { ID } from 'react-native-appwrite';
 import {
     account,
@@ -12,8 +13,9 @@ import {
     IMAGES_BUCKET_ID 
 } from '../../appwrite/config';
 
-
-export default function ListingForm({ navigation }){
+export default function ListingForm({ navigation: externalNavigation }){
+    // Use Expo Router directly inside the component
+    const router = useRouter();
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [price, setPrice] = useState('');
@@ -115,11 +117,14 @@ export default function ListingForm({ navigation }){
                     const fileName = `${Date.now()}_${index}.jpg`;
                     console.log(`Uploading file: ${fileName}`);
 
+                    // FIXED: Pass permissions properly as an array of strings
                     const fileUpload = await storage.createFile(
                       IMAGES_BUCKET_ID,
                       ID.unique(),
                       blob,
-                      fileName,
+                      // Permissions must be an array of strings
+                      ['read("any")', `update("user:${currentUser.$id}")`, `delete("user:${currentUser.$id}")`],
+                      fileName
                     );
                     console.log(`File uploaded with ID: ${fileUpload.$id}`);
 
@@ -133,21 +138,20 @@ export default function ListingForm({ navigation }){
                         order: index,
                       }
                     );
-            }));
-        }
+                }));
+            }
 
-        Alert.alert('Success', 'Your listing has been created!');
+            Alert.alert('Success', 'Your listing has been created!');
 
-        if (navigation) {
-            navigation.goBack();
-          }
+            // Use the router from Expo Router directly
+            router.replace('/(tabs)');
         } catch (error) {
-          console.error('Error creating listing:', error);
-          Alert.alert('Error', 'Failed to create listing. Please try again.');
+            console.error('Error creating listing:', error);
+            Alert.alert('Error', 'Failed to create listing. Please try again.');
         } finally {
-          setIsSubmitting(false);
+            setIsSubmitting(false);
         }
-      };
+    };
 
       return (
         <ScrollView style={styles.container}>

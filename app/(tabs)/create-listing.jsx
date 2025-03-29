@@ -8,7 +8,7 @@ export default function CreateListingScreen() {
   
   return (
     <View style={styles.container}>
-      <ListingForm navigation={router} />
+      <ListingForm />
     </View>
   );
 }
