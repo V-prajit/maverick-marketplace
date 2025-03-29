@@ -14,7 +14,6 @@ import {
 } from '../../appwrite/config';
 
 export default function ListingForm({ navigation: externalNavigation }){
-    // Use Expo Router directly inside the component
     const router = useRouter();
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -34,12 +33,21 @@ export default function ListingForm({ navigation: externalNavigation }){
             }
 
             const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                mediaTypes: ['images'],
                 allowsEditing: true,
-                quality: 0.8,    
+                quality: 0.8,
+                base64: false,
+                exif: false,    
             });
 
             if (!result.canceled){
+                console.log("Selected image info:", {
+                    uri: result.assets[0].uri,
+                    width: result.assets[0].width,
+                    height: result.assets[0].height,
+                    type: result.assets[0].type,
+                });
+
                 setImages([...images, result.assets[0]]);
             }
         } catch (error) {
@@ -110,24 +118,23 @@ export default function ListingForm({ navigation: externalNavigation }){
 
             if (images.length > 0) {
                 await Promise.all(images.map(async (image, index) => {
-                    console.log(`Processing image ${index}`);
-                    const response = await fetch(image.uri);
-                    const blob = await response.blob();
+                  try {
+                    // Get the file name and extension from the URI
+                    const uriParts = image.uri.split('/');
+                    const fileName = uriParts[uriParts.length - 1];
                     
-                    const fileName = `${Date.now()}_${index}.jpg`;
-                    console.log(`Uploading file: ${fileName}`);
-
-                    // FIXED: Pass permissions properly as an array of strings
+                    console.log(`Uploading image: ${fileName}`);
+                    
+                    // Try the most basic approach
                     const fileUpload = await storage.createFile(
                       IMAGES_BUCKET_ID,
                       ID.unique(),
-                      blob,
-                      // Permissions must be an array of strings
-                      ['read("any")', `update("user:${currentUser.$id}")`, `delete("user:${currentUser.$id}")`],
-                      fileName
+                      image.uri,
+                      ['read("any")']
                     );
-                    console.log(`File uploaded with ID: ${fileUpload.$id}`);
-
+                    
+                    console.log(`File uploaded successfully with ID: ${fileUpload.$id}`);
+                    
                     await databases.createDocument(
                       DATABASE_ID,
                       IMAGES_COLLECTION_ID,
@@ -138,8 +145,11 @@ export default function ListingForm({ navigation: externalNavigation }){
                         order: index,
                       }
                     );
+                  } catch (error) {
+                    console.error(`Upload failed for image ${index}:`, error);
+                  }
                 }));
-            }
+              }
 
             Alert.alert('Success', 'Your listing has been created!');
 

@@ -73,7 +73,16 @@ export default function HomeScreen() {
 
             if (imagesResponse.documents.length > 0) {
               const fileId = imagesResponse.documents[0].fileId;
-              listing.imageUrl = storage.getFileView(IMAGES_BUCKET_ID, fileId);
+              const baseUrl = process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT
+              const imageUrl = `${baseUrl}/storage/buckets/${IMAGES_BUCKET_ID}/files/${fileId}/view`;
+              console.log("Generated image URL:", imageUrl);
+
+              try {
+                listing.imageUrl = imageUrl;
+                console.log("Image URL:", listing.imageUrl); // Add logging for debugging
+              } catch (error) {
+                console.error(`Error getting file view for ${fileId}:`, error);
+              }
             }
             return listing;
           } catch (error) {
@@ -110,27 +119,27 @@ export default function HomeScreen() {
           </TouchableOpacity>
         )}
       </View>
-
+  
       {/* Main Content */}
-      <ScrollView
-        contentContainerStyle={styles.contentContainer}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
+      <View style={styles.mainContent}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Latest Listings</Text>
         </View>
-
+  
         {isLoading && !refreshing ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#2196F3" />
           </View>
         ) : (
-          <ListingGrid listing={listing} isLoading={isLoading} />
+          <ListingGrid 
+            listing={listing} 
+            isLoading={isLoading}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+          />
         )}
-      </ScrollView>
-
+      </View>
+  
       {/* Create Listing Button (only shown when logged in) */}
       {loggedInUser && (
         <TouchableOpacity
@@ -145,6 +154,9 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  mainContent: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: '#f8f8f8',

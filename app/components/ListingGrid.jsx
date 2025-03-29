@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 
-export default function ListingGrid({ listing, isLoading }){
+export default function ListingGrid({ listing, isLoading, refreshing, onRefresh }){
     const router = useRouter();
   
     const renderListingItem = ({ item }) => (
@@ -12,7 +12,11 @@ export default function ListingGrid({ listing, isLoading }){
       >
         <View style={styles.imageContainer}>
           {item.imageUrl ? (
-            <Image source={{ uri: item.imageUrl }} style={styles.image} />
+            <Image 
+              source={{ uri: item.imageUrl }} 
+              style={styles.image}
+              onError={(e) => console.error('Image load error:', e.nativeEvent.error)}
+            />
           ) : (
             <View style={styles.placeholderImage}>
               <Text style={styles.placeholderText}>No Image</Text>
@@ -42,6 +46,9 @@ export default function ListingGrid({ listing, isLoading }){
         keyExtractor={item => item.$id}
         numColumns={2}
         contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing || false} onRefresh={onRefresh} />
+        }
       />
     );
 }
