@@ -74,10 +74,14 @@ export default function HomeScreen() {
             if (imagesResponse.documents.length > 0) {
               const fileId = imagesResponse.documents[0].fileId;
               try {
-                const imageUrl = storage.getFileView(IMAGES_BUCKET_ID, fileId);
-                console.log("Generated image URL:", imageUrl);
-
-                listing.imageUrl = imageUrl;
+                const imageUrl = storage.getFilePreview(
+                  IMAGES_BUCKET_ID, 
+                  fileId,
+                  400,
+                  300
+                );
+                console.log("Generated image URL:", imageUrl.toString());
+                listing.imageUrl = imageUrl.toString();
               } catch (error) {
                 console.error(`Error getting file view for ${fileId}:`, error);
               }

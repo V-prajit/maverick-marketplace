@@ -20,9 +20,11 @@ export default function ListingGrid({ listing, isLoading, refreshing, onRefresh 
                     'X-Appwrite-Project': process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID,
                     }
                 }}
-                style={styles.image}
+                style={{...styles.image, minWidth: 150, minHeight: 150}}
                 contentFit="cover"
-                transition={300}
+                cachePolicy="none"
+                onError={(error) => console.error("Image error:", error)}
+                onLoad={() => console.log("Image loaded successfully")}
             />
         ) : (
             <View style={styles.placeholderImage}>

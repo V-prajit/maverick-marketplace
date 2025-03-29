@@ -202,7 +202,7 @@ client
                         sdk.Permission.update(sdk.Role.users()),
                         sdk.Permission.delete(sdk.Role.users())
                     ],
-                    true
+                    false
                 );
                 console.log(`Storage bucket created with ID: ${bucket.$id}`);
             } catch (error) {
