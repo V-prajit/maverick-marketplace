@@ -6,7 +6,13 @@ import {
   TextInput, 
   TouchableOpacity, 
   ActivityIndicator,
-  Alert
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
+  ScrollView,
+  SafeAreaView
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ID, Query } from 'react-native-appwrite';
@@ -77,7 +83,7 @@ export default function NewChatScreen() {
         DATABASE_ID,
         USERS_COLLECTION_ID,
         [Query.equal('userId', sellerIdToUse)]
-    );
+      );
       
       if (sellerProfileResponse.documents.length > 0) {
         setSellerInfo(sellerProfileResponse.documents[0]);
@@ -150,6 +156,10 @@ export default function NewChatScreen() {
     }
   };
 
+  const dismissKeyboard = () => {
+    Keyboard.dismiss();
+  };
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -159,55 +169,85 @@ export default function NewChatScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>New Chat</Text>
-        
-        {listingInfo && (
-          <View style={styles.listingInfo}>
-            <Text style={styles.listingTitle}>
-              About: <Text style={styles.listingTitleText}>{listingInfo.title}</Text>
-            </Text>
-            <Text style={styles.price}>
-              Price: <Text style={styles.priceText}>${listingInfo.price?.toFixed(2)}</Text>
-            </Text>
-            {sellerInfo && (
-              <Text style={styles.seller}>
-                Seller: <Text style={styles.sellerName}>{sellerInfo.displayName}</Text>
-              </Text>
-            )}
-          </View>
-        )}
-      </View>
-      
-      <View style={styles.messageContainer}>
-        <Text style={styles.messageLabel}>Your message:</Text>
-        <TextInput
-          style={styles.messageInput}
-          value={message}
-          onChangeText={setMessage}
-          placeholder="Type your message to the seller..."
-          multiline
-          numberOfLines={4}
-        />
-        
-        <TouchableOpacity 
-          style={[styles.button, (!message.trim() || isSending) && styles.buttonDisabled]} 
-          onPress={startChat}
-          disabled={!message.trim() || isSending}
-        >
-          {isSending ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Send Message</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-    </View>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 0}
+      >
+        <TouchableWithoutFeedback onPress={dismissKeyboard}>
+          <ScrollView 
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollViewContent}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.container}>
+              <View style={styles.header}>
+                <Text style={styles.title}>New Chat</Text>
+                
+                {listingInfo && (
+                  <View style={styles.listingInfo}>
+                    <Text style={styles.listingTitle}>
+                      About: <Text style={styles.listingTitleText}>{listingInfo.title}</Text>
+                    </Text>
+                    <Text style={styles.price}>
+                      Price: <Text style={styles.priceText}>${listingInfo.price?.toFixed(2)}</Text>
+                    </Text>
+                    {sellerInfo && (
+                      <Text style={styles.seller}>
+                        Seller: <Text style={styles.sellerName}>{sellerInfo.displayName}</Text>
+                      </Text>
+                    )}
+                  </View>
+                )}
+              </View>
+              
+              <View style={styles.messageContainer}>
+                <Text style={styles.messageLabel}>Your message:</Text>
+                <TextInput
+                  style={styles.messageInput}
+                  value={message}
+                  onChangeText={setMessage}
+                  placeholder="Type your message to the seller..."
+                  multiline
+                  numberOfLines={4}
+                />
+                
+                <TouchableOpacity 
+                  style={[styles.button, (!message.trim() || isSending) && styles.buttonDisabled]} 
+                  onPress={startChat}
+                  disabled={!message.trim() || isSending}
+                >
+                  {isSending ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.buttonText}>Send Message</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    paddingBottom: 30, // Add padding to the bottom to ensure content is visible above keyboard
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff',
@@ -254,6 +294,7 @@ const styles = StyleSheet.create({
   },
   messageContainer: {
     flex: 1,
+    paddingBottom: 20,
   },
   messageLabel: {
     fontSize: 16,
@@ -268,12 +309,14 @@ const styles = StyleSheet.create({
     height: 120,
     textAlignVertical: 'top',
     marginBottom: 24,
+    maxHeight: 150,
   },
   button: {
     backgroundColor: '#2196F3',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
+    marginBottom: 40, // Extra space at the bottom
   },
   buttonDisabled: {
     backgroundColor: '#ccc',

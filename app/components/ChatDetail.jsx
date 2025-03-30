@@ -9,7 +9,10 @@ import {
   KeyboardAvoidingView, 
   Platform,
   ActivityIndicator,
-  Alert
+  Alert,
+  Keyboard,
+  TouchableWithoutFeedback,
+  ScrollView
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ID, Query } from 'react-native-appwrite';
@@ -32,8 +35,34 @@ export default function ChatDetail(){
     const [currentUser, setCurrentUser] = useState(null);
     const [chatInfo, setChatInfo] = useState(null);
     const [otherUser, setOtherUser] = useState(null);
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
     const flatListRef = useRef(null);
     const router = useRouter();
+
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener(
+          'keyboardDidShow',
+          () => {
+            setKeyboardVisible(true);
+            if (flatListRef.current && messages.length > 0) {
+              setTimeout(() => {
+                flatListRef.current.scrollToEnd({ animated: true });
+              }, 100);
+            }
+          }
+        );
+        const keyboardDidHideListener = Keyboard.addListener(
+          'keyboardDidHide',
+          () => {
+            setKeyboardVisible(false);
+          }
+        );
+
+        return () => {
+          keyboardDidShowListener.remove();
+          keyboardDidHideListener.remove();
+        };
+    }, [messages]);
 
     useEffect(() => {
         if (!chatId || !currentUser) return;
@@ -236,6 +265,10 @@ export default function ChatDetail(){
         }
     };
 
+    const dismissKeyboard = () => {
+        Keyboard.dismiss();
+    };
+
     const renderDateSeparator = (dateString) => {
         return (
           <View style={styles.dateSeparator}>
@@ -281,59 +314,63 @@ export default function ChatDetail(){
       }
     
       return (
-        <KeyboardAvoidingView
-          style={styles.container}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-        >
-          {/* Chat Header */}
-          {chatInfo && (
-            <View style={styles.chatHeader}>
-              <Text style={styles.listingTitle} numberOfLines={1}>
-                {chatInfo.listingTitle}
-              </Text>
-              <Text style={styles.chatWith}>
-                Chat with {otherUser?.displayName || 'User'}
-              </Text>
-            </View>
-          )}
-          
-          {/* Messages List */}
-          <FlatList
-            ref={flatListRef}
-            data={messages}
-            renderItem={renderMessage}
-            keyExtractor={item => item.$id}
-            contentContainerStyle={styles.messagesContainer}
-            onContentSizeChange={() => {
-              if (flatListRef.current && messages.length > 0) {
-                flatListRef.current.scrollToEnd({ animated: true });
-              }
-            }}
-          />
-          
-          {/* Message Input */}
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              value={newMessage}
-              onChangeText={setNewMessage}
-              placeholder="Type a message..."
-              multiline
+        <TouchableWithoutFeedback onPress={dismissKeyboard}>
+          <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+          >
+            {/* Chat Header */}
+            {chatInfo && (
+              <View style={styles.chatHeader}>
+                <Text style={styles.listingTitle} numberOfLines={1}>
+                  {chatInfo.listingTitle}
+                </Text>
+                <Text style={styles.chatWith}>
+                  Chat with {otherUser?.displayName || 'User'}
+                </Text>
+              </View>
+            )}
+            
+            {/* Messages List */}
+            <FlatList
+              ref={flatListRef}
+              data={messages}
+              renderItem={renderMessage}
+              keyExtractor={item => item.$id}
+              contentContainerStyle={styles.messagesContainer}
+              onContentSizeChange={() => {
+                if (flatListRef.current && messages.length > 0) {
+                  flatListRef.current.scrollToEnd({ animated: !keyboardVisible });
+                }
+              }}
             />
-            <TouchableOpacity 
-              style={[styles.sendButton, !newMessage.trim() && styles.sendButtonDisabled]} 
-              onPress={sendMessage}
-              disabled={!newMessage.trim()}
-            >
-              <Ionicons 
-                name="send" 
-                size={20} 
-                color={!newMessage.trim() ? '#A9A9A9' : '#fff'} 
+            
+            {/* Message Input */}
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                value={newMessage}
+                onChangeText={setNewMessage}
+                placeholder="Type a message..."
+                multiline
+                maxHeight={100}
+                returnKeyType="default"
               />
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
+              <TouchableOpacity 
+                style={[styles.sendButton, !newMessage.trim() && styles.sendButtonDisabled]} 
+                onPress={sendMessage}
+                disabled={!newMessage.trim()}
+              >
+                <Ionicons 
+                  name="send" 
+                  size={20} 
+                  color={!newMessage.trim() ? '#A9A9A9' : '#fff'} 
+                />
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
+        </TouchableWithoutFeedback>
       );
 }
 
