@@ -6,6 +6,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Query } from 'react-native-appwrite';
 import { Image } from 'expo-image';
 import { account, databases, storage, DATABASE_ID, LISTINGS_COLLECTION_ID, IMAGES_COLLECTION_ID, USERS_COLLECTION_ID, IMAGES_BUCKET_ID } from '../../appwrite/config';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams();

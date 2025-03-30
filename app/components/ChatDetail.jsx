@@ -36,7 +36,8 @@ export default function ChatDetail(){
     const router = useRouter();
 
     useEffect(() => {
-        if (!chatId) return;
+        if (!chatId || !currentUser) return;
+
         const unsubscribe = client.subscribe(`databases.${DATABASE_ID}.collections.${MESSAGES_COLLECTION_ID}.documents`, response => {
             if (response.events.includes(`databases.${DATABASE_ID}.collections.${MESSAGES_COLLECTION_ID}.documents.*.create`)) {
             const newMsg = response.payload;
@@ -45,17 +46,18 @@ export default function ChatDetail(){
                 setMessages(prevMessages => [...prevMessages, newMsg]);
                 
                 if (currentUser && newMsg.senderId !== currentUser.$id) {
-                markMessageAsRead(newMsg.$id);
+                    markMessageAsRead(newMsg.$id);
                 }
                 
                 if (flatListRef.current) {
-                setTimeout(() => {
-                    flatListRef.current.scrollToEnd({ animated: true });
-                }, 100);
+                    setTimeout(() => {
+                        flatListRef.current.scrollToEnd({ animated: true });
+                    }, 100);
                 }
             }
             }
         });
+        
         return () => {
             unsubscribe();
         };

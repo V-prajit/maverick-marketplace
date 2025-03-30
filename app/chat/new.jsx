@@ -9,7 +9,7 @@ import {
   Alert
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ID } from 'react-native-appwrite';
+import { ID, Query } from 'react-native-appwrite';
 import { 
   account, 
   databases, 
@@ -76,8 +76,8 @@ export default function NewChatScreen() {
       const sellerProfileResponse = await databases.listDocuments(
         DATABASE_ID,
         USERS_COLLECTION_ID,
-        [{ key: 'userId', value: sellerIdToUse }]
-      );
+        [Query.equal('userId', sellerIdToUse)]
+    );
       
       if (sellerProfileResponse.documents.length > 0) {
         setSellerInfo(sellerProfileResponse.documents[0]);
