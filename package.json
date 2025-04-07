@@ -11,7 +11,9 @@
     "test": "jest --watchAll",
     "lint": "expo lint",
     "network-setup": "node setup-network.js",
-    "start-network": "EXPO_ROUTER_APP_ROOT=./app EXPO_ROUTER_IMPORT_MODE=sync expo start --lan"
+    "start-network": "EXPO_ROUTER_APP_ROOT=./app EXPO_ROUTER_IMPORT_MODE=sync expo start --lan",
+    "tunnel-setup": "node setup-tunnel.js",
+    "tunnel": "EXPO_ROUTER_APP_ROOT=./app EXPO_ROUTER_IMPORT_MODE=sync expo start --tunnel"
   },
   "jest": {
     "preset": "jest-expo"

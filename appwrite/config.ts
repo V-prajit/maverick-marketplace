@@ -3,10 +3,18 @@ import { Platform } from 'react-native';
 
 const client = new Client()
   .setEndpoint(process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT)
-  .setProject(process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID)
+  .setProject(process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID);
 
- if (Platform.OS !== 'web') {
-    client.setPlatform(process.env.EXPO_PUBLIC_APPWRITE_PLATFORM);
+// Configure the client for proper tunneling
+if (Platform.OS !== 'web') {
+  // Set the platform for mobile apps
+  client.setPlatform(process.env.EXPO_PUBLIC_APPWRITE_PLATFORM);
+  
+  // If in tunnel mode, set additional headers to help with tunneling
+  if (process.env.EXPO_PUBLIC_APPWRITE_TUNNEL_MODE === 'true') {
+    // This ensures we don't send self-signed certificate errors
+    client.setSelfSigned(true);
+  }
 }
 
 const account = new Account(client);

@@ -16,15 +16,19 @@ export default function ListingGrid({ listing, isLoading, refreshing, onRefresh 
             <Image 
                 source={{ 
                     uri: item.imageUrl,
-                    headers: {
-                    'X-Appwrite-Project': process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID,
-                    }
+                    // For tunneling compatibility, avoid extra headers
+                    // when using Expo tunnel as they can cause issues
+                    ...(process.env.EXPO_PUBLIC_APPWRITE_TUNNEL_MODE !== 'true' ? {
+                      headers: {
+                        'X-Appwrite-Project': process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID,
+                      }
+                    } : {})
                 }}
                 style={{...styles.image, minWidth: 150, minHeight: 150}}
                 contentFit="cover"
                 cachePolicy="none"
                 onError={(error) => console.error("Image error:", error)}
-                onLoad={() => console.log("Image loaded successfully")}
+                transition={200}
             />
         ) : (
             <View style={styles.placeholderImage}>
